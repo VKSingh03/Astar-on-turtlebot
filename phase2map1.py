@@ -312,9 +312,9 @@ class Astar:
         start=(start_cost_to_goal,start_cost_to_goal,0,0,self.START,0,[(self.START[1],self.START[0])],[0,0])
         goal=(float('inf'),0,None,None,self.GOAL,None)
         # Left Wheel
-        RPM1=int(input("Enter RPM1"))
+        RPM1=int(input("Enter RPM1: "))
         # Right Wheel
-        RPM2=int(input("Enter RPM2"))
+        RPM2=int(input("Enter RPM2: "))
 #         RPM1,RPM2=30,40
         actions=[[0,RPM1],[RPM1,0],[RPM1,RPM1],[0,RPM2],[RPM2,0],[RPM2,RPM2],[RPM1,RPM2],[RPM2,RPM1]]
         # Create an open list
@@ -366,10 +366,10 @@ class Astar:
                                 idx=idx+1
                                 neighbor[3]=idx
                                 neighbor[6]=track
-#                                 self.draw_vector(current,neighbor)
-#                                 flip_img = cv2.flip(self.img, 0)
-#                                 cv2.imshow('Frame',flip_img)
-#                                 cv2.waitKey(1)
+                                self.draw_vector(current,neighbor)
+                                flip_img = cv2.flip(self.img, 0)
+                                cv2.imshow('Frame',flip_img)
+                                cv2.waitKey(1)
                                 open_list.put(tuple(neighbor))
                                 self.visited[neighbor[4][0],neighbor[4][1]]=neighbor[0]
 
@@ -394,26 +394,56 @@ class Astar:
         return tracker,current
     
 
-initial_point = [30 ,30, 45]
-# goal_point = [560, 220, 0]
-goal_point = [150, 125, 0]
-# goal_point = [50, 55, 0]
-step_size = 10
-robot_clear = 5
-object_clear = 5
+# initial_point = [30 ,30, 45]
+# # goal_point = [560, 220, 0]
+# goal_point = [150, 125, 0]
+# # goal_point = [50, 55, 0]
+# step_size = 10
+# robot_clear = 5
+# object_clear = 5
 
-# Converting initial and final goals to multiple of 30 
-init_deg = int(initial_point[2]/30)
-goal_deg = int(goal_point[2]/30)
-# Converting inputs from list to tuple and integer 
-start=(initial_point[1], initial_point[0],init_deg)
-goal=(goal_point[1], goal_point[0],goal_deg)
-# robot_clear = robot_clear[0]
-# object_clear = object_clear[0]
-# step_size = step_size[0]
+# # Converting initial and final goals to multiple of 30 
+# init_deg = int(initial_point[2]/30)
+# goal_deg = int(goal_point[2]/30)
+# # Converting inputs from list to tuple and integer 
+# start=(initial_point[1], initial_point[0],init_deg)
+# goal=(goal_point[1], goal_point[0],goal_deg)
+# # robot_clear = robot_clear[0]
+# # object_clear = object_clear[0]
+# # step_size = step_size[0]
 
-#Creating an instance of A*
-d_algo = Astar(600,250,1,start,goal,robot_clear,object_clear,step_size)
+# #Creating an instance of A*
+# d_algo = Astar(600,250,1,start,goal,robot_clear,object_clear,step_size)
 
-# Call the game method
-d_algo.game()
+# # Call the game method
+# d_algo.game()
+
+if __name__ == "__main__":
+
+    # Parameters to accept start and goal
+    # initial_point = input("Enter Start Point and Degree: ")
+    # goal_point = input("Enter Goal Point and Degree: ")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--InitState",nargs='+', type=int, help = 'Initial state for the matrix')
+    parser.add_argument("--GoalState",nargs='+', type=int, help = 'Goal state for the matrix')
+    Args = parser.parse_args()
+    initial_point = Args.InitState
+    goal_point = Args.GoalState
+    init_deg = initial_point[2]
+    goal_deg = goal_point[2]    
+
+    # Converting inputs from list to tuple and integer 
+    start=(initial_point[1],initial_point[0],init_deg)
+    goal=(goal_point[1],goal_point[0],goal_deg)
+
+    robot_clear = int(input("Enter Robot Clearance: "))
+    object_clear = int(input("Enter Object Clearance: "))
+    step_size = int(input('Enter Step Size: '))
+
+    #Creating an instance of A*
+    map_width = 600
+    map_height = 250
+    d_algo = Astar(map_width,map_height,1,start,goal,robot_clear,object_clear,step_size)
+
+    # Call the game method
+    d_algo.game()
