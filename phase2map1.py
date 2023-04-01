@@ -242,6 +242,8 @@ class Astar:
         
     def action_set(self,current,action):
         t=0
+#         6m=6000mm=600px
+#         0.038m=38mm=0.38px
         r= 0.038*10
         L= 0.354*10
         dt=0.1
@@ -264,7 +266,7 @@ class Astar:
         xg=round(xg+del_xn)
         yg=round(yg+del_yn)
         thetag=round(thetag)%360
-        if xg>=0 and yg>=0 and xg<self.WIDTH and yg<self.HEIGHT:
+        if xg>=0 and yg>=0 and xg<self.HEIGHT and yg<self.WIDTH:
 #       Cost,CostToGoal,Parent,Idx,State,CostToCome,Track
                 if self.check_robot((xg,yg)):
                     return [-1,None,None,None,(xg,yg,thetag),None,None,action],D,track
@@ -275,6 +277,7 @@ class Astar:
     
     def draw_vector(self,current,neighbor):
         points=neighbor[6]
+        cv2.circle(self.img, (neighbor[4][1],neighbor[4][0]), 1, (0,0,240), -1)
         for i in range(len(points) - 1):
             self.img=cv2.line(self.img, points[i], points[i+1], self.robot_color, thickness=1)
        
@@ -301,7 +304,8 @@ class Astar:
         for current,neighbor in self.frame_info:
             self.draw_vector(current,neighbor)
             flip_img = cv2.flip(self.img, 0)
-            self.result.write(flip_img)
+            for i in range(10):
+                self.result.write(flip_img)
                  
     def astar(self):
         start_time = time.time()
@@ -312,9 +316,9 @@ class Astar:
         start=(start_cost_to_goal,start_cost_to_goal,0,0,self.START,0,[(self.START[1],self.START[0])],[0,0])
         goal=(float('inf'),0,None,None,self.GOAL,None)
         # Left Wheel
-        RPM1=int(input("Enter RPM1"))
+        RPM1=int(input("Enter RPM1: "))
         # Right Wheel
-        RPM2=int(input("Enter RPM2"))
+        RPM2=int(input("Enter RPM2: "))
 #         RPM1,RPM2=30,40
         actions=[[0,RPM1],[RPM1,0],[RPM1,RPM1],[0,RPM2],[RPM2,0],[RPM2,RPM2],[RPM1,RPM2],[RPM2,RPM1]]
         # Create an open list
@@ -325,7 +329,7 @@ class Astar:
         tracker=[]
         current=start
         open_list.put(start)
-        self.visited= np.zeros((600, 250, 360))
+        self.visited= np.zeros((self.HEIGHT, self.WIDTH, 360))
         self.visited[self.START[0],self.START[1],self.START[2]]=start_cost_to_goal
         while open_list.queue and not self.check_goal(current[4]) :
             
@@ -353,7 +357,7 @@ class Astar:
                                 indices = np.nonzero(self.visited)
     #                             print(indices)
     #                                 print("Neighbor not in visited: ",neighbor[4])
-                                cv2.circle(self.img, (neighbor[4][1],neighbor[4][0]), 1, (0,0,240), -1)
+#                                 cv2.circle(self.img, (neighbor[4][1],neighbor[4][0]), 1, (0,0,240), -1)
 #                                 Cost,CostToGoal,Parent,Idx,State,CostToCome,Track
                                 self.frame_info.append([current,neighbor])
 #                                 Parent
@@ -366,10 +370,10 @@ class Astar:
                                 idx=idx+1
                                 neighbor[3]=idx
                                 neighbor[6]=track
-#                                 self.draw_vector(current,neighbor)
-#                                 flip_img = cv2.flip(self.img, 0)
-#                                 cv2.imshow('Frame',flip_img)
-#                                 cv2.waitKey(1)
+                                self.draw_vector(current,neighbor)
+                                flip_img = cv2.flip(self.img, 0)
+                                cv2.imshow('Frame',flip_img)
+                                cv2.waitKey(1)
                                 open_list.put(tuple(neighbor))
                                 self.visited[neighbor[4][0],neighbor[4][1]]=neighbor[0]
 
@@ -393,27 +397,3 @@ class Astar:
         print(f"\nExecution time of algorithm: {elapsed_time:.2f} seconds")
         return tracker,current
     
-
-initial_point = [30 ,30, 45]
-# goal_point = [560, 220, 0]
-goal_point = [150, 125, 0]
-# goal_point = [50, 55, 0]
-step_size = 10
-robot_clear = 5
-object_clear = 5
-
-# Converting initial and final goals to multiple of 30 
-init_deg = int(initial_point[2]/30)
-goal_deg = int(goal_point[2]/30)
-# Converting inputs from list to tuple and integer 
-start=(initial_point[1], initial_point[0],init_deg)
-goal=(goal_point[1], goal_point[0],goal_deg)
-# robot_clear = robot_clear[0]
-# object_clear = object_clear[0]
-# step_size = step_size[0]
-
-#Creating an instance of A*
-d_algo = Astar(600,250,1,start,goal,robot_clear,object_clear,step_size)
-
-# Call the game method
-d_algo.game()
