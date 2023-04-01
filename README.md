@@ -44,7 +44,7 @@ To run the program, open the command prompt/terminal and navigate to the directo
 
 Enter the values for Robot Clearance, Object Clearance, Step Size, Left wheel RPM (RPM1), and Right wheel RPM (RPM2) when prompted by the code.  
 
-    Test case 2: 
+>Test case 2:
     python3 Astar_turtlebot.py --InitState 30 30 45 --GoalState 550 125 0
 
 
@@ -54,7 +54,7 @@ To run the AStar_turtlebot.py, open the command prompt/terminal and navigate to 
 
 Enter the values for Robot Clearance, Object Clearance, Step Size, Left wheel RPM (RPM1), and Right wheel RPM (RPM2) when prompted by the code.  
 
-    Test case 2: 
+>Test case 2: 
     python3 Astar_turtlebot.py --InitState 30 30 45 --GoalState 550 125 0
 
 
