@@ -10,10 +10,11 @@ import time
 from queue import PriorityQueue
 import cv2
 import argparse
+import matplotlib.pyplot as plt
 
 # Creating Node Class
 class Astar:
-    def _init_(self,width,height,scale,start,goal,robot_clear,obj_clear,step_size):
+    def __init__(self,width,height,scale,start,goal,robot_clear,obj_clear,step_size):
         
         # Get the video dimensions and FPS
         self.result = cv2.VideoWriter("Astar01.avi", cv2.VideoWriter_fourcc(*'MJPG'), 600, (width, height))
@@ -39,7 +40,7 @@ class Astar:
         self.explored_color= (64, 188, 237)
         self.track_color= (16, 141, 16)
         self.robot_color= (62, 169, 119)
-        self.robot_clear_color= (255, 255, 255)
+        self.robot_clear_color= (255, 254, 255)
 
         # Define Grid Size
         self.grid_size=2
@@ -136,7 +137,7 @@ class Astar:
         h2=self.obstacle_detect_rectangle(p,150-self.OBJ,100-self.OBJ,100+self.OBJ,50+2*self.OBJ)
         h3=self.obstacle_detect_polygon(p,self.HEX_CLR)
         h4=self.obstacle_detect_polygon(p,self.TRI_CLR)
-        h5= self.obstacle_detect_boundary(p,self.OBJ,self.OBJ,250-2*self.OBJ,600-2*self.OBJ)
+        h5= self.obstacle_detect_boundary(p,self.OBJ,self.OBJ,self.HEIGHT-2*self.OBJ,self.WIDTH-2*self.OBJ)
         
         return (h1 or h2 or h3 or h4 or h5)
     
@@ -145,36 +146,30 @@ class Astar:
         h2=self.obstacle_detect_rectangle(p,150-(self.OBJ+self.ROBOT),100-(self.OBJ+self.ROBOT),100+(self.OBJ+self.ROBOT),50+2*(self.OBJ+self.ROBOT))
         h3=self.obstacle_detect_polygon(p,self.HEX_ROBO_CLR)
         h4=self.obstacle_detect_polygon(p,self.TRI_ROBO_CLR)
-        h5= self.obstacle_detect_boundary(p,(self.OBJ+self.ROBOT),(self.OBJ+self.ROBOT),250-2*(self.OBJ+self.ROBOT),600-2*(self.OBJ+self.ROBOT))
+        h5= self.obstacle_detect_boundary(p,(self.OBJ+self.ROBOT),(self.OBJ+self.ROBOT),self.HEIGHT-2*(self.OBJ+self.ROBOT),self.WIDTH-2*(self.OBJ+self.ROBOT))
         
         return (h1 or h2 or h3 or h4 or h5)
 
     def make_obstacle_space(self):
+    
         grid=np.ones((self.HEIGHT,self.WIDTH,3),np.uint8)
-        nodes=[]
-        for i in range(self.HEIGHT*2):
-            row=[]
-            for j in  range(self.WIDTH*2):
-                theta=[]
-                for t in range(361):
-                    if self.check_robot((i/2,j/2)):
-                        theta.append([-1,None,None,None,(i/2,j/2,t),None])
-                        grid[int(np.floor(i/2))][int(np.floor(j/2))]=np.array(self.robot_clear_color)
-                        if self.check_clearance((i/2,j/2)):
-                            grid[int(np.floor(i/2))][int(np.floor(j/2))]=np.array(self.clear_color)
-                            if self.check_obstacle((i/2,j/2)):
-                                grid[int(np.floor(i/2))][int(np.floor(j/2))]=np.array(self.obst_color)
+        for i in range(self.HEIGHT):
+            for j in  range(self.WIDTH):
+                    if self.check_robot((i,j)):
+                        grid[i][j]=np.array(self.robot_clear_color)
+                        if self.check_clearance((i,j)):
+                            grid[i][j]=np.array(self.clear_color)
+                            if self.check_obstacle((i,j)):
+                                grid[i][j]=np.array(self.obst_color)
                     else:
-                        theta.append([float('inf'),float('inf'),None,None,(i/2,j/2,t),float('inf')])
-                        grid[int(np.floor(i/2))][int(np.floor(j/2))]=np.array(self.background)
-                row.append(theta)
-            nodes.append(row)
-        return grid,nodes
+                        grid[i][j]=np.array(self.background)
+        
+        return grid
 
     def game(self):
         self.running=True
         if self.START[0]>=0 and self.START[0]<self.HEIGHT and self.START[1]>=0 and self.START[1]<self.WIDTH:
-            if self.check_clearance(self.START):
+            if self.check_robot(self.START):
                 print("Invalid Start")
                 self.running=False
             else:
@@ -184,7 +179,7 @@ class Astar:
             print(" Start Out of Bounds")
 
         if self.GOAL[0]>=0 and self.GOAL[0]<self.HEIGHT and self.GOAL[1]>=0 and self.GOAL[1]<self.WIDTH:
-            if self.check_clearance(self.GOAL):
+            if self.check_robot(self.GOAL):
                 print("Invalid Goal")
                 self.running=False
             else:
@@ -194,7 +189,12 @@ class Astar:
             print(" Goal Out of Bounds")
         if self.running:
             start_time = time.time()
-            self.img,self.node_grid = self.make_obstacle_space()
+            self.img = self.make_obstacle_space()
+#             plt.show()
+#             return
+#             cv2.imshow("Out", self.img)
+#             cv2.waitKey(0)
+#             cv2.destroyAllWindows()
             end_time = time.time()
             elapsed_time = end_time - start_time
             print(f"\nGrid formation Time: {elapsed_time:.2f} seconds")
@@ -209,93 +209,93 @@ class Astar:
                 self.result.write(flip_img)
             flip_img = cv2.flip(self.img, 0)
             cv2.imshow("Out", flip_img)
-            cv2.waitKey(10)
+            cv2.waitKey(0)
             cv2.destroyAllWindows()
 
     def back_track(self,tracker,current,img):
         g_node=current
-        path=[]
+        points=[]
+        points.append(current[6])
+        actions=[]
+        actions.append(current[7])
         while not g_node[3]==0:
             for c in tracker:
                 if c[3] == g_node[2]:
-                    path.append([c[4][1],c[4][0]])
+                    points.append(c[6])
+                    actions.append(c[7])
                     g_node=c
         print("Complete")
-        path.reverse()
-        for i in range(len(path)-1):
-            x1,y1=path[i]
-            x2,y2=path[i+1]
-            print(path[i],path[i+1])
-            # draw the line on the image
-            img=cv2.line(img, (int(x2),int(y2)), (int(x1),int(y1)), self.track_color, 4)
+        points.reverse()
+        actions.reverse()
+        with open('actions.txt', 'w') as file:
+        # Write each sublist to the file, with elements separated by a space
+            for row in actions:
+                line = ' '.join(str(elem) for elem in row) + '\n'
+                file.write(line)
+        path=[]
+        for p in points:
+            path+=p
+        for i in range(len(path) - 1):
+            img=cv2.line(img, path[i], path[i+1], self.track_color, thickness=2)
         return img
     
-    def roundn(self,num):
-        if num>=np.floor(num)+0.5:
-            rounded_num = np.ceil(num) if 0.75 < (num%1) else num-(num%0.5)
-        else:
-            rounded_num = np.floor(num) if  0.25 < (num%1) else num-(num%0.5)
-        return  rounded_num
-    
+        
     def action_set(self,current,action):
         t=0
-        r= 0.038
-        L= 0.354
+        r= 0.038*10
+        L= 0.354*10
         dt=0.1
         xg=current[0]
         yg=current[1]
         thetag=np.deg2rad(current[2])
-
+        del_xn,del_yn=0,0
         D=0
+        track=[(yg,xg)]
         while t<1:
             t=t+dt
             del_xn += 0.5*r*sum(action)*math.cos(thetag)*dt
             del_yn += 0.5*r*sum(action)*math.sin(thetag)*dt
+#             print(del_yn,del_xn)
+            track.append((int(yg+del_yn),int(xg+del_xn)))
             thetag+=(r/L)*(action[1]-action[0])*dt
-            print(del_xn,del_yn,thetag)
-            D=D+math.sqrt(math.pow(0.5*r*sum(action)*math.cos(thetag),2)+math.pow(0.5*r*sum(action)*math.sin(thetag),2))
+#             print(del_xn,del_yn,thetag)
+            D=D+math.sqrt(math.pow(0.5*r*sum(action)*math.cos(thetag)*dt,2)+math.pow(0.5*r*sum(action)*math.sin(thetag)*dt,2))
         thetag=np.rad2deg(thetag)
-        if (thetag >360):
-            thetag = thetag - 360
-        elif (thetag<0):
-            thetag = 360+thetag
-        else:
-            pass
-        xg=xg+del_xn
-        yg=yg+del_yn
-        xg=self.roundn(xg)
-        yg=self.roundn(yg)
+        xg=round(xg+del_xn)
+        yg=round(yg+del_yn)
+        thetag=round(thetag)%360
         if xg>=0 and yg>=0 and xg<self.WIDTH and yg<self.HEIGHT:
-                cost=D
-                return self.node_grid[int(yg*2)][int(xg*2)][int(thetag)],cost
+#       Cost,CostToGoal,Parent,Idx,State,CostToCome,Track
+                if self.check_robot((xg,yg)):
+                    return [-1,None,None,None,(xg,yg,thetag),None,None,action],D,track
+                else:
+                    return [np.Inf,np.Inf,None,None,(xg,yg,thetag),np.Inf,None,action],D,track
         else:
-            return None,None
+            return None,None,None
     
     def draw_vector(self,current,neighbor):
-        # define the start and end points of the line
-        start_point = (int(np.floor(current[4][1])),int(np.floor(current[4][0])))
-        end_point = (int(np.floor(neighbor[4][1])),int(np.floor(neighbor[4][0])))
-
-        # draw the line on the image
-        self.img=cv2.line(self.img, start_point, end_point, self.robot_color, 1)
-        
+        points=neighbor[6]
+        for i in range(len(points) - 1):
+            self.img=cv2.line(self.img, points[i], points[i+1], self.robot_color, thickness=1)
+       
     def cost_to_goal(self,x,y):
-        return math.sqrt((self.GOAL[0]-x)*2 + (self.GOAL[1]-y)*2)
+        return math.sqrt((self.GOAL[0]-x)**2 + (self.GOAL[1]-y)**2)
     
     def check_goal(self, current):
         # Calculate the distance between the point and the center of the circle using the Pythagorean theorem
-        distance = ((current[0] - self.GOAL[0]) * 2 + (current[1] - self.GOAL[1]) * 2) ** 0.5
+        distance = ((current[0] - self.GOAL[0]) ** 2 + (current[1] - self.GOAL[1]) ** 2) ** 0.5
         # If the distance is less than or equal to the radius of the circle, the point lies within the circle
-        if distance <= 1.5:
+        if distance <= 7.5:
             return True
         else:
             return False
 
-    def check_dup(self,current, open_list):
-        for _,_,_,_,node,_ in open_list:
-            if ((current[0] - node[0]) * 2 + (current[1] - node[1]) * 2)<=0.5:
+    def check_dup(self,current, close_list):
+        for node in close_list:
+            if ((current[0] - node[0]) ** 2 + (current[1] - node[1]) ** 2)<=25.0:
                 return True
         return False
+    
     
     def video(self):
         for current,neighbor in self.frame_info:
@@ -306,14 +306,17 @@ class Astar:
     def astar(self):
         start_time = time.time()
         idx=1
-        start_cost_to_goal=math.sqrt((self.GOAL[0]-self.START[0])*2 + (self.GOAL[1]-self.START[1])*2)
-        start=(start_cost_to_goal,start_cost_to_goal,0,0,self.START,0)
+        cv2.circle(self.img, (self.START[1],self.START[0]), 7, (255,240,240), 2)
+        cv2.circle(self.img, (self.GOAL[1],self.GOAL[0]), 7, (255,255,200), 2)
+        start_cost_to_goal=math.sqrt((self.GOAL[0]-self.START[0])**2 + (self.GOAL[1]-self.START[1])**2)
+        start=(start_cost_to_goal,start_cost_to_goal,0,0,self.START,0,[(self.START[1],self.START[0])],[0,0])
         goal=(float('inf'),0,None,None,self.GOAL,None)
-        
-         # Define action sets
-        self.L = 10
-        actions = [[k, self.L] for k in range(-2,3)]
-        
+        # Left Wheel
+        RPM1=int(input("Enter RPM1"))
+        # Right Wheel
+        RPM2=int(input("Enter RPM2"))
+#         RPM1,RPM2=30,40
+        actions=[[0,RPM1],[RPM1,0],[RPM1,RPM1],[0,RPM2],[RPM2,0],[RPM2,RPM2],[RPM1,RPM2],[RPM2,RPM1]]
         # Create an open list
         open_list = PriorityQueue()
         # Create a close list
@@ -322,27 +325,37 @@ class Astar:
         tracker=[]
         current=start
         open_list.put(start)
-        while open_list and not self.check_goal(current[4]):
+        self.visited= np.zeros((600, 250, 360))
+        self.visited[self.START[0],self.START[1],self.START[2]]=start_cost_to_goal
+        while open_list.queue and not self.check_goal(current[4]) :
+            
+#             print("OpenList")
+#             for i in open_list.queue:
+#                 print(i[0:6])
+#             print("-------")
             current=open_list.get()
+#             print("Current:",current)
+#             print("-------")
             close_list.append(current[4])
             tracker.append(current)
             if self.check_goal(current[4]):
                     break
             else:
                 for a in actions:
-                    neighbor,cost_of_action=self.action_set(current[4],a)
-                    if not neighbor==None:
-                        
-                        if neighbor[4] not in close_list and not neighbor[0]==-1:
-                            if  neighbor[0]==float('inf'):
+                    neighbor,cost_of_action,track=self.action_set(current[4],a)
+                    
+                    if not neighbor==None:    
+                            if not self.check_dup(neighbor[4],close_list)  and not neighbor[0]==-1:
+
+    #                             print("Current: ",current[4],"Action: ",a)
+    #                             print("Neighbor: ",neighbor[4])
+    #                             print("Neighbour Cretetd: ",neighbor[4])
+                                indices = np.nonzero(self.visited)
+    #                             print(indices)
+    #                                 print("Neighbor not in visited: ",neighbor[4])
+                                cv2.circle(self.img, (neighbor[4][1],neighbor[4][0]), 1, (0,0,240), -1)
+#                                 Cost,CostToGoal,Parent,Idx,State,CostToCome,Track
                                 self.frame_info.append([current,neighbor])
-                                # self.draw_vector(current,neighbor)
-                                # flip_img = cv2.flip(self.img, 0)
-                                # # cv2.imshow("Out",flip_img)
-                                # # cv2.waitKey(1)
-                                # # if cv2.waitKey(20) & 0xFF == ord('q'):
-                                # #     break
-                                # self.result.write(flip_img)
 #                                 Parent
                                 neighbor[2]=current[3]
 #                                 Cost to Come
@@ -352,23 +365,34 @@ class Astar:
                                 neighbor[1]=self.cost_to_goal(neighbor[4][0],neighbor[4][1])
                                 idx=idx+1
                                 neighbor[3]=idx
+                                neighbor[6]=track
+#                                 self.draw_vector(current,neighbor)
+#                                 flip_img = cv2.flip(self.img, 0)
+#                                 cv2.imshow('Frame',flip_img)
+#                                 cv2.waitKey(1)
                                 open_list.put(tuple(neighbor))
+                                self.visited[neighbor[4][0],neighbor[4][1]]=neighbor[0]
+
                             else:
-                                if neighbor[0]>current[5]+cost_of_action:
+                                if self.visited[neighbor[4][0],neighbor[4][1],neighbor[4][2]]>current[5]+cost_of_action:
                                     neighbor[2]=current[3]
                                     neighbor[5]=current[5]+cost_of_action
+                                    neighbor[6]=track
                                     neighbor[0]=neighbor[5]+self.cost_to_goal(neighbor[4][0],neighbor[4][1])
-        if not open_list:
+                                    self.visited[neighbor[4][0],neighbor[4][1],neighbor[4][2]]=neighbor[0]
+
+        if not open_list.queue:
             print("Goal Not Found")
             return None, None
         
-        tracker.append(current)          
+        cv2.destroyAllWindows()
+        tracker.append(current)   
+#         print("Tracker: ",tracker)
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"\nExecution time of algorithm: {elapsed_time:.2f} seconds")
         return tracker,current
     
-
 if __name__ == "__main__":
 
     # Parameters to accept start and goal
