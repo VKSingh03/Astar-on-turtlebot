@@ -317,9 +317,7 @@ class Astar:
         goal=(float('inf'),0,None,None,self.GOAL,None)
         # Left Wheel
         RPM1=int(input("Enter RPM1: "))
-        RPM1=int(input("Enter RPM1: "))
         # Right Wheel
-        RPM2=int(input("Enter RPM2: "))
         RPM2=int(input("Enter RPM2: "))
 #         RPM1,RPM2=30,40
         actions=[[0,RPM1],[RPM1,0],[RPM1,RPM1],[0,RPM2],[RPM2,0],[RPM2,RPM2],[RPM1,RPM2],[RPM2,RPM1]]
