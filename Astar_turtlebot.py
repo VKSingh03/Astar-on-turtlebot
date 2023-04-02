@@ -271,7 +271,7 @@ class Astar:
         xg=round(xg+del_xn)
         yg=round(yg+del_yn)
         thetag=round(thetag)%360
-        if xg>=0 and yg>=0 and xg<self.WIDTH and yg<self.HEIGHT:
+        if xg>=0 and yg>=0 and xg<self.HEIGHT and yg<self.WIDTH:
 #       Cost,CostToGoal,Parent,Idx,State,CostToCome,Track
                 if self.check_robot((xg,yg)):
                     return [-1,None,None,None,(xg,yg,thetag),None,None,action],D,track
@@ -282,6 +282,7 @@ class Astar:
     
     def draw_vector(self,current,neighbor):
         points=neighbor[6]
+        cv2.circle(self.img, (neighbor[4][1],neighbor[4][0]), 1, (0,0,240), -1)
         for i in range(len(points) - 1):
             self.img=cv2.line(self.img, points[i], points[i+1], self.robot_color, thickness=1)
        
@@ -308,7 +309,8 @@ class Astar:
         for current,neighbor in self.frame_info:
             self.draw_vector(current,neighbor)
             flip_img = cv2.flip(self.img, 0)
-            self.result.write(flip_img)
+            for i in range(10):
+                self.result.write(flip_img)
                  
     def astar(self):
         start_time = time.time()
@@ -332,7 +334,7 @@ class Astar:
         tracker=[]
         current=start
         open_list.put(start)
-        self.visited= np.zeros((600, 250, 360))
+        self.visited= np.zeros((self.HEIGHT, self.WIDTH, 360))
         self.visited[self.START[0],self.START[1],self.START[2]]=start_cost_to_goal
         while open_list.queue and not self.check_goal(current[4]) :
             
