@@ -17,7 +17,7 @@ class Astar:
     def __init__(self,width,height,scale,start,goal,robot_clear,obj_clear,step_size):
         
         # Get the video dimensions and FPS
-        self.result = cv2.VideoWriter("Astar01.avi", cv2.VideoWriter_fourcc(*'MJPG'), 600, (width, height))
+        self.result = cv2.VideoWriter("Astar02.avi", cv2.VideoWriter_fourcc(*'MJPG'), 600, (width, height))
         
         # Define constants
         self.START=start
@@ -124,31 +124,38 @@ class Astar:
                 return False
         return True
         
+    def obstacle_detect_circle(self,p, yc, xc, r):
+        if ((p[1] - xc) ** 2 + (p[0] - yc) ** 2)<=r**2:
+            return True
+        return False
+    
     def check_obstacle(self,p):
-        h1=self.obstacle_detect_rectangle(p,0,100,100,50)
-        h2=self.obstacle_detect_rectangle(p,150,100,100,50)
-        h3=self.obstacle_detect_polygon(p,self.HEX)
-        h4=self.obstacle_detect_polygon(p,self.TRI)
+        h1=self.obstacle_detect_rectangle(p,0,250,125,15)
+        h2=self.obstacle_detect_rectangle(p,75,150,125,15)
+        # h3=self.obstacle_detect_polygon(p,self.HEX)
+        # h4=self.obstacle_detect_polygon(p,self.TRI)
+        h5=self.obstacle_detect_circle(p,110,400,50)
 
-        return (h1 or h2 or h3 or h4 )
+        return (h1 or h2 or h5 )
     
     def check_clearance(self,p):
-        h1=self.obstacle_detect_rectangle(p,0,100-self.OBJ,100+self.OBJ,50+2*self.OBJ)
-        h2=self.obstacle_detect_rectangle(p,150-self.OBJ,100-self.OBJ,100+self.OBJ,50+2*self.OBJ)
-        h3=self.obstacle_detect_polygon(p,self.HEX_CLR)
-        h4=self.obstacle_detect_polygon(p,self.TRI_CLR)
+        h1=self.obstacle_detect_rectangle(p,0,250-self.OBJ,125+self.OBJ,15+2*self.OBJ)
+        h2=self.obstacle_detect_rectangle(p,75-self.OBJ,150-self.OBJ,125+self.OBJ,15+2*self.OBJ)
+        # h3=self.obstacle_detect_polygon(p,self.HEX_CLR)
+        # h4=self.obstacle_detect_polygon(p,self.TRI_CLR)
         h5= self.obstacle_detect_boundary(p,self.OBJ,self.OBJ,self.HEIGHT-2*self.OBJ,self.WIDTH-2*self.OBJ)
+        h6=self.obstacle_detect_circle(p,110,400,50+self.OBJ)
         
-        return (h1 or h2 or h3 or h4 or h5)
+        return (h1 or h2 or h5 or h6)
     
     def check_robot(self,p):
-        h1=self.obstacle_detect_rectangle(p,0,100-(self.OBJ+self.ROBOT),100+(self.OBJ+self.ROBOT),50+2*(self.OBJ+self.ROBOT))
-        h2=self.obstacle_detect_rectangle(p,150-(self.OBJ+self.ROBOT),100-(self.OBJ+self.ROBOT),100+(self.OBJ+self.ROBOT),50+2*(self.OBJ+self.ROBOT))
-        h3=self.obstacle_detect_polygon(p,self.HEX_ROBO_CLR)
-        h4=self.obstacle_detect_polygon(p,self.TRI_ROBO_CLR)
+        h1=self.obstacle_detect_rectangle(p,0,250-(self.OBJ+self.ROBOT),125+(self.OBJ+self.ROBOT),15+2*(self.OBJ+self.ROBOT))
+        h2=self.obstacle_detect_rectangle(p,75-(self.OBJ+self.ROBOT),150-(self.OBJ+self.ROBOT),125+(self.OBJ+self.ROBOT),15+2*(self.OBJ+self.ROBOT))
+        # h3=self.obstacle_detect_polygon(p,self.HEX_ROBO_CLR)
+        # h4=self.obstacle_detect_polygon(p,self.TRI_ROBO_CLR)
         h5= self.obstacle_detect_boundary(p,(self.OBJ+self.ROBOT),(self.OBJ+self.ROBOT),self.HEIGHT-2*(self.OBJ+self.ROBOT),self.WIDTH-2*(self.OBJ+self.ROBOT))
-        
-        return (h1 or h2 or h3 or h4 or h5)
+        h6=self.obstacle_detect_circle(p,110,400,50+self.OBJ+self.ROBOT)
+        return (h1 or h2 or h5 or h6)
 
     def make_obstacle_space(self):
     
@@ -292,7 +299,7 @@ class Astar:
 
     def check_dup(self,current, close_list):
         for node in close_list:
-            if ((current[0] - node[0]) ** 2 + (current[1] - node[1]) ** 2)<=25.0:
+            if ((current[0] - node[0]) ** 2 + (current[1] - node[1]) ** 2)<=49:
                 return True
         return False
     
@@ -312,9 +319,9 @@ class Astar:
         start=(start_cost_to_goal,start_cost_to_goal,0,0,self.START,0,[(self.START[1],self.START[0])],[0,0])
         goal=(float('inf'),0,None,None,self.GOAL,None)
         # Left Wheel
-        RPM1=int(input("Enter RPM1"))
+        RPM1=int(input("Enter RPM1 (Left wheel RPM): "))
         # Right Wheel
-        RPM2=int(input("Enter RPM2"))
+        RPM2=int(input("Enter RPM2 (Right wheel RPM): "))
 #         RPM1,RPM2=30,40
         actions=[[0,RPM1],[RPM1,0],[RPM1,RPM1],[0,RPM2],[RPM2,0],[RPM2,RPM2],[RPM1,RPM2],[RPM2,RPM1]]
         # Create an open list
@@ -366,10 +373,10 @@ class Astar:
                                 idx=idx+1
                                 neighbor[3]=idx
                                 neighbor[6]=track
-#                                 self.draw_vector(current,neighbor)
-#                                 flip_img = cv2.flip(self.img, 0)
-#                                 cv2.imshow('Frame',flip_img)
-#                                 cv2.waitKey(1)
+                                # self.draw_vector(current,neighbor)
+                                # flip_img = cv2.flip(self.img, 0)
+                                # cv2.imshow('Frame',flip_img)
+                                # cv2.waitKey(1)
                                 open_list.put(tuple(neighbor))
                                 self.visited[neighbor[4][0],neighbor[4][1]]=neighbor[0]
 
@@ -393,31 +400,32 @@ class Astar:
         print(f"\nExecution time of algorithm: {elapsed_time:.2f} seconds")
         return tracker,current
     
+
 if __name__ == "__main__":
 
     # Parameters to accept start and goal
-    initial_point = input("Enter Start Point and Degree: ")
-    goal_point = input("Enter Goal Point and Degree: ")
+    # initial_point = input("Enter Start Point and Degree: ")
+    # goal_point = input("Enter Goal Point and Degree: ")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--InitState",nargs='+', type=int, help = 'Initial state for the matrix')
+    parser.add_argument("--GoalState",nargs='+', type=int, help = 'Goal state for the matrix')
+    Args = parser.parse_args()
+    initial_point = Args.InitState
+    goal_point = Args.GoalState
+    init_deg = initial_point[2]
+    goal_deg = goal_point[2]
+    # Converting inputs from list to tuple and integer 
+    start=(initial_point[1],initial_point[0],init_deg)
+    goal=(goal_point[1],goal_point[0],goal_deg)
+
     robot_clear = int(input("Enter Robot Clearance: "))
     object_clear = int(input("Enter Object Clearance: "))
     step_size = int(input('Enter Step Size: '))
 
-    # Converting initial and final goals to multiple of 30 
-    init_deg = initial_point[2]
-    goal_deg = goal_point[2]
-    # Converting inputs from list to tuple and integer 
-    start=(initial_point[1], initial_point[0],init_deg)
-    goal=(goal_point[1], goal_point[0],goal_deg)
-
-    # To remove in final submission. 
-    initial_point = [12, 12, 30]
-    goal_point = [20, 20, 30]
-    robot_clear = 5
-    object_clear = 5
-    step_size = 5
-
     #Creating an instance of A*
-    d_algo = Astar(600,250,1,start,goal,robot_clear,object_clear,step_size)
+    map_width = 600
+    map_height = 200
+    d_algo = Astar(map_width,map_height,1,start,goal,robot_clear,object_clear,step_size)
 
     # Call the game method
     d_algo.game()
