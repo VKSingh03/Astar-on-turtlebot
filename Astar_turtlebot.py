@@ -1,7 +1,8 @@
 # Project 3 
 # Submission By: Shantanu Parab (sparab), Vineet Singh (vsingh03)
 
-# GITHUB Link: https://github.com/shantanuparabumd/ASTAR.git
+# GITHUB Link: https://github.com/VKSingh03/Astar-on-turtlebot.git
+
 
 # Imports
 import math
@@ -197,11 +198,6 @@ class Astar:
         if self.running:
             start_time = time.time()
             self.img = self.make_obstacle_space()
-#             plt.show()
-#             return
-#             cv2.imshow("Out", self.img)
-#             cv2.waitKey(0)
-#             cv2.destroyAllWindows()
             end_time = time.time()
             elapsed_time = end_time - start_time
             print(f"\nGrid formation Time: {elapsed_time:.2f} seconds")
@@ -262,10 +258,8 @@ class Astar:
             t=t+dt
             del_xn += 0.5*r*sum(action)*math.cos(thetag)*dt
             del_yn += 0.5*r*sum(action)*math.sin(thetag)*dt
-#             print(del_yn,del_xn)
             track.append((int(yg+del_yn),int(xg+del_xn)))
             thetag+=(r/L)*(action[1]-action[0])*dt
-#             print(del_xn,del_yn,thetag)
             D=D+math.sqrt(math.pow(0.5*r*sum(action)*math.cos(thetag)*dt,2)+math.pow(0.5*r*sum(action)*math.sin(thetag)*dt,2))
         thetag=np.rad2deg(thetag)
         xg=round(xg+del_xn)
@@ -300,7 +294,7 @@ class Astar:
 
     def check_dup(self,current, close_list):
         for node in close_list:
-            if ((current[0] - node[0]) ** 2 + (current[1] - node[1]) ** 2)<=49:
+            if ((current[0] - node[0]) ** 2 + (current[1] - node[1]) ** 2)<=16:
                 return True
         return False
     
@@ -315,8 +309,10 @@ class Astar:
     def astar(self):
         start_time = time.time()
         idx=1
-        cv2.circle(self.img, (self.START[1],self.START[0]), 7, (255,240,240), 2)
-        cv2.circle(self.img, (self.GOAL[1],self.GOAL[0]), 7, (255,255,200), 2)
+        # If weight>1 then Algorithm runs as weighted AStar
+        weight = 2
+        cv2.circle(self.img, (self.START[1],self.START[0]), 7, (0,0,240), 2)
+        cv2.circle(self.img, (self.GOAL[1],self.GOAL[0]), 10, (255,0,0), 2)
         start_cost_to_goal=math.sqrt((self.GOAL[0]-self.START[0])**2 + (self.GOAL[1]-self.START[1])**2)
         start=(start_cost_to_goal,start_cost_to_goal,0,0,self.START,0,[(self.START[1],self.START[0])],[0,0])
         goal=(float('inf'),0,None,None,self.GOAL,None)
@@ -337,14 +333,7 @@ class Astar:
         self.visited= np.zeros((self.HEIGHT, self.WIDTH, 360))
         self.visited[self.START[0],self.START[1],self.START[2]]=start_cost_to_goal
         while open_list.queue and not self.check_goal(current[4]) :
-            
-#             print("OpenList")
-#             for i in open_list.queue:
-#                 print(i[0:6])
-#             print("-------")
             current=open_list.get()
-#             print("Current:",current)
-#             print("-------")
             close_list.append(current[4])
             tracker.append(current)
             if self.check_goal(current[4]):
@@ -355,22 +344,13 @@ class Astar:
                     
                     if not neighbor==None:    
                             if not self.check_dup(neighbor[4],close_list)  and not neighbor[0]==-1:
-
-    #                             print("Current: ",current[4],"Action: ",a)
-    #                             print("Neighbor: ",neighbor[4])
-    #                             print("Neighbour Cretetd: ",neighbor[4])
-                                indices = np.nonzero(self.visited)
-    #                             print(indices)
-    #                                 print("Neighbor not in visited: ",neighbor[4])
-                                cv2.circle(self.img, (neighbor[4][1],neighbor[4][0]), 1, (0,0,240), -1)
-#                                 Cost,CostToGoal,Parent,Idx,State,CostToCome,Track
                                 self.frame_info.append([current,neighbor])
 #                                 Parent
                                 neighbor[2]=current[3]
 #                                 Cost to Come
                                 neighbor[5]=current[5]+cost_of_action
 #                                 Cost
-                                neighbor[0]=neighbor[5]+self.cost_to_goal(neighbor[4][0],neighbor[4][1])
+                                neighbor[0]=neighbor[5]+self.cost_to_goal(neighbor[4][0],neighbor[4][1])*weight
                                 neighbor[1]=self.cost_to_goal(neighbor[4][0],neighbor[4][1])
                                 idx=idx+1
                                 neighbor[3]=idx
@@ -387,7 +367,7 @@ class Astar:
                                     neighbor[2]=current[3]
                                     neighbor[5]=current[5]+cost_of_action
                                     neighbor[6]=track
-                                    neighbor[0]=neighbor[5]+self.cost_to_goal(neighbor[4][0],neighbor[4][1])
+                                    neighbor[0]=neighbor[5]+self.cost_to_goal(neighbor[4][0],neighbor[4][1])*weight
                                     self.visited[neighbor[4][0],neighbor[4][1],neighbor[4][2]]=neighbor[0]
 
         if not open_list.queue:
@@ -406,23 +386,23 @@ class Astar:
 if __name__ == "__main__":
 
     # Parameters to accept start and goal
-    # initial_point = input("Enter Start Point and Degree: ")
-    # goal_point = input("Enter Goal Point and Degree: ")
     parser = argparse.ArgumentParser()
-    parser.add_argument("--InitState",nargs='+', type=int, help = 'Initial state for the matrix')
-    parser.add_argument("--GoalState",nargs='+', type=int, help = 'Goal state for the matrix')
+    # print("Enter start and goal points as per ROS map coordinates: ")
+    parser.add_argument("--InitState",nargs='+', type=float, help = 'Initial state for the matrix')
+    parser.add_argument("--GoalState",nargs='+', type=float, help = 'Goal state for the matrix')
     Args = parser.parse_args()
     initial_point = Args.InitState
     goal_point = Args.GoalState
     init_deg = initial_point[2]
     goal_deg = goal_point[2]
     # Converting inputs from list to tuple and integer 
-    start=(initial_point[1],initial_point[0],init_deg)
-    goal=(goal_point[1],goal_point[0],goal_deg)
-
+    start=(int(initial_point[1]*100+100),int(initial_point[0]*100+50),int(init_deg))
+    goal=(int(goal_point[1]*100+100),int(goal_point[0]*100+50),int(goal_deg))
+    # print(start, ", ", goal)
     robot_clear = int(input("Enter Robot Clearance: "))
     object_clear = int(input("Enter Object Clearance: "))
-    step_size = int(input('Enter Step Size: '))
+    # step_size = int(input('Enter Step Size: '))
+    step_size = 10
 
     #Creating an instance of A*
     map_width = 600
