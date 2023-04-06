@@ -27,6 +27,7 @@
   + Once the program runs  completetly it will show  a image output of optimum path.
   + Press enter once the image is shown this will complete the video recording
   + The program will ask the user to give the inputs for start and goal and check wheter it is valid.
+  + The input parameters should be in meters and angle should be in degrees. 
 
 
 Note: The output videos in both cases is created as .avi which is converted to .mp4 using another software.
@@ -75,15 +76,15 @@ Output Video: https://youtu.be/pela1_hRaCk
     python3 Astar_turtlebot.py --InitState 0 0 0 --GoalState 5.2 0.8 0
 
 
-Note: 
+<!-- Note:  -->
 
-ROS Link: https://youtu.be/8U9iF_QIr0E
+<!-- ROS Link: https://youtu.be/8U9iF_QIr0E -->
 
 ## Github Link
 [Repository](https://github.com/VKSingh03/Astar-on-turtlebot.git)
 
-## Video Output
-[Output Video for map1](Astar01.mp4)
+<!-- ## Video Output
+[Output Video for map1](Astar01.mp4) -->
 
 
 
